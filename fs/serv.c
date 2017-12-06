@@ -231,8 +231,13 @@ serve_read(envid_t envid, union Fsipc *ipc)
 }
 
 int
-serve_mmap(envid_t envid, union Fsipc *ipc)
+serve_mmap(envid_t envid, union Fsipc *ipc,
+	       void **pg_store, int *perm_store)
 {
+
+	*perm_store |= PTE_P | PTE_U | PTE_W;
+
+	cprintf("SERVE_MAP is being called\n");
 	struct Fsreq_mmap *req = &ipc->mmap;
 	struct Fsret_mmap *ret = &ipc->mmapRet;
 
@@ -243,15 +248,41 @@ serve_mmap(envid_t envid, union Fsipc *ipc)
 		return r;
 	}
 
-	// check ret->ret_addr is NULL?
-	// if, allocate buffer and assign ret->ret_addr
-	// if not null, allocate buffer at ret->ret_addr
+	void *buffer = req->req_addr;
+	size_t length = req->req_n;
+	off_t offset = req->req_offset;
+
+	// back up bitmap
+	if ((r = sys_page_alloc(0, (void*) PGSIZE, PTE_P|PTE_U|PTE_W)) < 0)
+		panic("sys_page_alloc: %e", r);
+
+	int any_integer = 9;
+	r = sys_reserve_continuous_pages(0, buffer, ROUNDUP(length, PGSIZE), any_integer);
+	if (r == 0) {
+		ret->ret_addr = NULL;
+		return -1; // error
+	}
+
+	for (int i = 0; i < ROUNDUP(length, PGSIZE); ++i)
+	{
+		if (sys_page_alloc(envid, buffer + i * PGSIZE, PTE_U | PTE_W | PTE_P) < 0) {
+			panic("FUCK");
+		}
+	}
+
+
+
 	// offset
-	// if ((r = file_read(open->o_file, buffer?, req->req_n, offset?)) < 0) {
-	// 	// Something went wrong in file_read
-	// 	return r;
-	// }
-	return 0;
+	cprintf("found continuous addr starting at %x\n", buffer);
+
+	if ((r = file_read(open->o_file, buffer, length, offset)) < 0) {
+		// Something went wrong in file_read
+		ret->ret_addr = NULL;
+		return -1;
+	}
+
+	ret->ret_addr = buffer;
+	return 1;
 }
 
 // Write req->req_n bytes from req->req_buf to req_fileid, starting at
@@ -346,7 +377,7 @@ fshandler handlers[] = {
 	[FSREQ_WRITE] =		(fshandler)serve_write,
 	[FSREQ_SET_SIZE] =	(fshandler)serve_set_size,
 	[FSREQ_SYNC] =		serve_sync,
-	[FSREQ_MMAP] =      serve_mmap
+	[FSREQ_MMAP] =      (fshandler)serve_mmap
 };
 
 void

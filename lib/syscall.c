@@ -117,3 +117,9 @@ sys_ipc_recv(void *dstva)
 	return syscall(SYS_ipc_recv, 1, (uint32_t)dstva, 0, 0, 0, 0);
 }
 
+int
+sys_reserve_continuous_pages(envid_t envid, void *va, int n_page, int perm)
+{
+	return syscall(SYS_sys_reserve_continuous_pages, 0, envid, (uint32_t)va, n_page, perm, 0);
+}
+

@@ -203,6 +203,7 @@ err:
 void *
 mmap(void *addr, size_t length, int prot, int flags,
            int fdnum, off_t offset) {
+	cprintf("THIS IS OUR MMAP\n");
 	int r;
 	struct Dev *dev;
 	struct Fd *fd;
@@ -216,8 +217,20 @@ mmap(void *addr, size_t length, int prot, int flags,
 	if (!dev->dev_read)
 		return NULL; // something wrong!!!
 
-	return (*dev->dev_mmap)(addr, length, prot, flags,
-					        fd, offset);
+	int any_integer = 9;
+	addr = (void *)sys_reserve_continuous_pages(0, addr, length, PTE_U | PTE_W | PTE_P);
+	if (addr == 0) {
+		cprintf("terribly wrong here"); // error
+	}
+
+	cprintf("mmap: addr = %x\n", addr);
+
+	read(fdnum, addr, length);
+
+	return addr;
+
+	// return (*dev->dev_mmap)(addr, length, prot, flags,
+					        // fd, offset);
 }
 
 ssize_t

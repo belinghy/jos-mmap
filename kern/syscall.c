@@ -217,6 +217,55 @@ sys_page_alloc(envid_t envid, void *va, int perm)
 	return 0;
 }
 
+
+static int
+sys_reserve_continuous_pages(envid_t envid, void *va, int n_page, int perm)
+{
+	if (va == NULL) {
+		va = (void *) UTEXT; // start from the beginning
+	}
+	va = ROUNDDOWN(va, PGSIZE);
+
+	struct Env *env;
+	int result = envid2env(envid, &env, 0);
+	if (result < 0) {
+		return result;
+	}
+
+	uint32_t addr_current;
+	for (addr_current = (uint32_t)va; addr_current < UTOP; addr_current += PGSIZE)
+	{
+		int not_free = false;
+		int i;
+		for (i = 0; i < n_page; ++i) {
+			pte_t *page_table_entry = pgdir_walk(env->env_pgdir, (void *)(addr_current + i * PGSIZE), 1);
+			if (page_table_entry != NULL && *page_table_entry != 0) {
+				// not free
+				not_free = true;
+				break;
+			}
+		}
+
+		if (not_free) {
+			addr_current += i * PGSIZE;
+			continue;
+		}
+
+		// set occupations
+		cprintf("setting the permissions\n");
+		for (int i = 0; i < n_page; ++i) {
+			pte_t *page_table_entry = pgdir_walk(env->env_pgdir, (void *)(addr_current + i * PGSIZE), 1);
+			*page_table_entry = perm;
+		}
+		va = (void *)addr_current;
+		break;
+	}
+
+	if (addr_current >= UTOP) return 0;
+
+	return (int)va;
+}
+
 // Map the page of memory at 'srcva' in srcenvid's address space
 // at 'dstva' in dstenvid's address space with permission 'perm'.
 // Perm has the same restrictions as in sys_page_alloc, except
@@ -446,6 +495,8 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 		return sys_ipc_try_send(a1, a2, (void *)a3, a4);
 	case SYS_ipc_recv:
 		return sys_ipc_recv((void *)a1);
+	case SYS_sys_reserve_continuous_pages:
+		return sys_reserve_continuous_pages(a1, (void *)a2, a3, a4);
 	default:
 		return -E_INVAL;
 	}
