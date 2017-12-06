@@ -16,6 +16,8 @@ struct Dev;
 struct Dev {
 	int dev_id;
 	const char *dev_name;
+	void * (*dev_mmap)(void *addr, size_t length, int prot, int flags,
+               		   struct Fd *fd, off_t offset);
 	ssize_t (*dev_read)(struct Fd *fd, void *buf, size_t len);
 	ssize_t (*dev_write)(struct Fd *fd, const void *buf, size_t len);
 	int (*dev_close)(struct Fd *fd);

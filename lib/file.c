@@ -29,6 +29,8 @@ fsipc(unsigned type, void *dstva)
 }
 
 static int devfile_flush(struct Fd *fd);
+static void * devfile_mmap(void *addr, size_t length, int prot, int flags,
+                           struct Fd *fd, off_t offset);
 static ssize_t devfile_read(struct Fd *fd, void *buf, size_t n);
 static ssize_t devfile_write(struct Fd *fd, const void *buf, size_t n);
 static int devfile_stat(struct Fd *fd, struct Stat *stat);
@@ -38,6 +40,7 @@ struct Dev devfile =
 {
 	.dev_id =	'f',
 	.dev_name =	"file",
+	.dev_mmap = devfile_mmap,
 	.dev_read =	devfile_read,
 	.dev_close =	devfile_flush,
 	.dev_stat =	devfile_stat,
@@ -101,6 +104,21 @@ devfile_flush(struct Fd *fd)
 {
 	fsipcbuf.flush.req_fileid = fd->fd_file.id;
 	return fsipc(FSREQ_FLUSH, NULL);
+}
+
+static void *
+devfile_mmap(void *addr, size_t length, int prot, int flags,
+                  struct Fd *fd, off_t offset) {
+	int r;
+
+	fsipcbuf.mmap.req_fileid = fd->fd_file.id;
+	fsipcbuf.mmap.req_n = length;
+	fsipcbuf.mmap.req_offset = offset;
+	fsipcbuf.mmap.req_addr = addr;
+	if ((r = fsipc(FSREQ_MMAP, NULL)) < 0)
+		return NULL;
+	//...
+	return fsipcbuf.mmapRet.ret_addr;
 }
 
 // Read at most 'n' bytes from 'fd' at the current position into 'buf'.

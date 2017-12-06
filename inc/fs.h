@@ -66,6 +66,8 @@ enum {
 	// Read returns a Fsret_read on the request page
 	FSREQ_READ,
 	FSREQ_WRITE,
+	// mmap
+	FSREQ_MMAP,
 	// Stat returns a Fsret_stat on the request page
 	FSREQ_STAT,
 	FSREQ_FLUSH,
@@ -108,6 +110,15 @@ union Fsipc {
 	struct Fsreq_remove {
 		char req_path[MAXPATHLEN];
 	} remove;
+	struct Fsreq_mmap {
+		int req_fileid;
+		size_t req_n;
+		size_t req_offset;
+		void *req_addr;
+	} mmap;
+	struct Fsret_mmap {
+		void *ret_addr;
+	} mmapRet;
 
 	// Ensure Fsipc is one page
 	char _pad[PGSIZE];
