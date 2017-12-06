@@ -230,6 +230,29 @@ serve_read(envid_t envid, union Fsipc *ipc)
 	return r;
 }
 
+int
+serve_mmap(envid_t envid, union Fsipc *ipc)
+{
+	struct Fsreq_mmap *req = &ipc->mmap;
+	struct Fsret_mmap *ret = &ipc->mmapRet;
+
+	struct OpenFile *open;
+	int r;
+	if ((r = openfile_lookup(envid, req->req_fileid, &open)) < 0) {
+		// error in lookup
+		return r;
+	}
+
+	// check ret->ret_addr is NULL?
+	// if, allocate buffer and assign ret->ret_addr
+	// if not null, allocate buffer at ret->ret_addr
+	// offset
+	// if ((r = file_read(open->o_file, buffer?, req->req_n, offset?)) < 0) {
+	// 	// Something went wrong in file_read
+	// 	return r;
+	// }
+	return 0;
+}
 
 // Write req->req_n bytes from req->req_buf to req_fileid, starting at
 // the current seek position, and update the seek position
@@ -322,7 +345,8 @@ fshandler handlers[] = {
 	[FSREQ_FLUSH] =		(fshandler)serve_flush,
 	[FSREQ_WRITE] =		(fshandler)serve_write,
 	[FSREQ_SET_SIZE] =	(fshandler)serve_set_size,
-	[FSREQ_SYNC] =		serve_sync
+	[FSREQ_SYNC] =		serve_sync,
+	[FSREQ_MMAP] =      serve_mmap
 };
 
 void
