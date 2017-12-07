@@ -30,8 +30,8 @@ umain(int argc, char **argv)
 
     // FIXME: Shouldn't need to do this.
     // Permission is wrong
-    close(fdnum);
-    fdnum = open("lorem", O_RDONLY);
+    
+    seek(fdnum, 0);
     cprintf("========OUTPUT from cat\n");
     cat(fdnum, "<stdin>");
 
@@ -40,4 +40,5 @@ umain(int argc, char **argv)
     for (int i = 0; i < stat.st_size / sizeof(char); ++i) {
         cprintf("%c", mmap_context[i]);
     }
+    close(fdnum);
 }
