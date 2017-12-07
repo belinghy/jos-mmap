@@ -2,7 +2,6 @@
 #include <inc/lib.h>
 
 char buf[8192];
-char buf_mmap[8192];
 
 void
 cat(int f, char *s)
@@ -20,21 +19,25 @@ cat(int f, char *s)
 void
 umain(int argc, char **argv)
 {
-    cprintf("hello, world\n");
-    cprintf("i am environment %08x\n", thisenv->env_id);
+    cprintf("Test: test_mmap\n");
+
     int fdnum = open("lorem", O_RDONLY);
     struct Stat stat;
     fstat(fdnum, &stat);
     cprintf("file size = %lld\n", stat.st_size);
     void *address = mmap(NULL, stat.st_size, 0, 0,
                          fdnum, 0);
-    memcpy(buf_mmap, address, stat.st_size);
+
+    // FIXME: Shouldn't need to do this.
+    // Permission is wrong
     close(fdnum);
     fdnum = open("lorem", O_RDONLY);
     cprintf("========OUTPUT from cat\n");
     cat(fdnum, "<stdin>");
+
     cprintf("========OUTPUT from mmap\n");
+    char *mmap_context = (char *)address;
     for (int i = 0; i < stat.st_size / sizeof(char); ++i) {
-        cprintf("%c", buf_mmap[i]);
+        cprintf("%c", mmap_context[i]);
     }
 }

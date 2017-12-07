@@ -223,12 +223,14 @@ sys_reserve_continuous_pages(envid_t envid, void *va, int n_page, int perm)
 {
 	if (va == NULL) {
 		va = (void *) UTEXT; // start from the beginning
+		// FIXME: Can we start from page_free_list instead?
 	}
 	va = ROUNDDOWN(va, PGSIZE);
 
 	struct Env *env;
 	int result = envid2env(envid, &env, 0);
 	if (result < 0) {
+		// return -E_BAD_ENV
 		return result;
 	}
 

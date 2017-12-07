@@ -220,7 +220,7 @@ mmap(void *addr, size_t length, int prot, int flags,
 	int any_integer = 9;
 	addr = (void *)sys_reserve_continuous_pages(0, addr, length, PTE_U | PTE_W | PTE_P);
 	if (addr == 0) {
-		cprintf("terribly wrong here"); // error
+		cprintf("mmap: failed to find continous pages"); // error
 	}
 
 	cprintf("mmap: addr = %x\n", addr);
