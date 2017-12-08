@@ -37,6 +37,7 @@ test_read_integrity() {
         cprintf("%c", mmap_context[i]);
     }
     close(fdnum);
+    munmap(address, stat.st_size);
 }
 
 void 
