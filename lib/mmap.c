@@ -2,13 +2,14 @@
 
 typedef struct mmap_entry
 {
+    struct Stat file_stat;
     int fdnum;
     void *addr;
     size_t length;
     int permission;
     off_t offset;
     struct mmap_entry *next;
-    bool occupied;
+    int ref_count;
 } mmap_entry;
 
 typedef struct mmap_entry_bucket
@@ -22,21 +23,16 @@ static mmap_entry *mmap_entry_root = NULL;
 static mmap_entry_bucket *mmap_entry_bucket_root = NULL;
 
 mmap_entry_bucket *mmap_entry_bucket_alloc() {
-    cprintf("allocating mmap entry bucket\n");
     mmap_entry_bucket *bucket = (mmap_entry_bucket *)sys_alloc_continuous_pages(0, (void *)0xC0000000, 1, PTE_U | PTE_W | PTE_P);
     if (bucket == 0) {
         panic("no memory left for mmap");
     }
-    cprintf("\tbucket allocated at %p\n", bucket);
-    cprintf("\tsizeof(mmap_entry) = %d\n", sizeof(mmap_entry));
     bucket->n_entries = (PGSIZE - sizeof(mmap_entry_bucket)) / sizeof(mmap_entry);
-    cprintf("\tbucket n_entries %d\n", bucket->n_entries);
     bucket->mmap_entrys = (mmap_entry *)((int)bucket + sizeof(mmap_entry_bucket));
-    cprintf("\tbucket mmap_entrys start at %p\n", bucket->mmap_entrys);
     for (int i = 0; i < bucket->n_entries; ++i)
     {
         mmap_entry *entry = bucket->mmap_entrys + i;
-        entry->occupied = false;
+        entry->ref_count = 0;
     }
     bucket->next = mmap_entry_bucket_root;
     mmap_entry_bucket_root = bucket;
@@ -44,13 +40,12 @@ mmap_entry_bucket *mmap_entry_bucket_alloc() {
 }
 
 mmap_entry *find_empty_mmap_entry() {
-    cprintf("looking for empty mmap_entry\n");
     mmap_entry_bucket *bucket = mmap_entry_bucket_root;
     while (bucket != NULL) {
         for (int i = 0; i < bucket->n_entries; ++i)
         {
             mmap_entry *entry = bucket->mmap_entrys + i;
-            if (!entry->occupied) return entry;
+            if (!entry->ref_count) return entry;
         }
         bucket = bucket->next;
     }
@@ -58,50 +53,59 @@ mmap_entry *find_empty_mmap_entry() {
 }
 
 mmap_entry *mmap_lookup(int fdnum, size_t length, int permission, off_t offset) {
-    cprintf("looking for mmap_entry, mmap_entry_root = %p\n", mmap_entry_root);
     mmap_entry *current_entry = mmap_entry_root;
 
     while (current_entry != NULL) {
         if (current_entry->fdnum == fdnum
-                && (current_entry->offset + current_entry->length >= offset + length) // once covered, we can use it
+                && (current_entry->length = length) // once covered, we can use it
                 && current_entry->permission == permission
-                && current_entry->offset <= offset) {
-            cprintf("found mmap_entry\n");
+                && current_entry->offset == offset) {
             return current_entry;
         }
         current_entry = current_entry->next;
     }
 
-    cprintf("did not find mmap_entry\n");
+    return NULL;
+}
+
+mmap_entry *mmap_lookup_by_addr(void *addr, size_t length) {
+    mmap_entry *current_entry = mmap_entry_root;
+
+    while (current_entry != NULL) {
+        if (current_entry->addr == addr
+                && current_entry->length == length) {
+            return current_entry;
+        }
+        current_entry = current_entry->next;
+    }
+
     return NULL;
 }
 
 mmap_entry *mmap_entry_alloc() {
-    cprintf("allocating mmap entry\n");
     mmap_entry *entry = find_empty_mmap_entry();
     if (entry == NULL) {
-        cprintf("all mmap bucket are full\n");
         mmap_entry_bucket *bucket = mmap_entry_bucket_alloc();
         entry = find_empty_mmap_entry();
     }
-    cprintf("\tcurrent mmap_entry_root = %p\n", mmap_entry_root);
     entry->next = mmap_entry_root;
     mmap_entry_root = entry;
-    cprintf("\t entry (%p)'s next = %p\n", entry, entry->next);
     return entry;
 }
 
 void *
 mmap(void *addr, size_t length, int permission, int flags,
            int fdnum, off_t offset) {
-    permission = PTE_U | PTE_W | PTE_P;
-
     mmap_entry *entry = mmap_lookup(fdnum, length, permission, offset);
     if (entry != NULL) {
+        if (permission & PTE_W) {
+            cprintf("This file is locked.\n");
+            return NULL;
+        }
+        entry->ref_count++;
         return entry->addr + offset - entry->offset;
     }
 
-    cprintf("THIS IS OUR MMAP\n");
     int r;
     struct Dev *dev;
     struct Fd *fd;
@@ -116,22 +120,21 @@ mmap(void *addr, size_t length, int permission, int flags,
         return NULL; // something wrong!!!
 
     int any_integer = 9;
-    addr = (void *)sys_alloc_continuous_pages(0, addr, length, PTE_U | PTE_W | PTE_P);
+    addr = (void *)sys_alloc_continuous_pages(0, addr, length, permission);
     if (addr == 0) {
-        cprintf("mmap: failed to find continous pages"); // error
+        panic("mmap: failed to find continous pages"); // error
     }
 
-    cprintf("mmap: addr = %p\n", addr);
-    cprintf("read(%d, %p, %x)\n", fdnum, addr, length);
     read(fdnum, addr, length);
 
     entry = mmap_entry_alloc();
-    entry->occupied = true;
+    entry->ref_count = 1;
     entry->fdnum = fdnum;
     entry->length = length;
     entry->permission = permission;
     entry->offset = offset;
     entry->addr = addr;
+    fstat(fdnum, &entry->file_stat);
 
     return addr;
 
@@ -139,3 +142,27 @@ mmap(void *addr, size_t length, int permission, int flags,
                             // fd, offset);
 }
 
+int
+munmap(void *addr, size_t length) {
+    mmap_entry *entry = mmap_lookup_by_addr(addr, length);
+    if (entry == NULL) {
+        panic("try to ummap an addr that has not been mapped yet.");
+    }
+    if (--entry->ref_count == 0 && (entry->permission & PTE_W)) {
+        int fdnum = entry->fdnum;
+        // check if the file is close or not
+        bool reopened = false;
+        struct Fd *fd;
+        int r;
+        if ((r = fd_lookup(entry->fdnum, &fd)) < 0) {
+            reopened = true;
+            // open the file
+            fdnum = open(entry->file_stat.st_name, O_WRONLY);
+        }
+        write(fdnum, addr, length);
+        if (reopened) {
+            close(fdnum);
+        }
+    }
+    return 0;
+}
