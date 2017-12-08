@@ -78,5 +78,5 @@ umain(int argc, char **argv)
 {
     test_read_integrity();
     // test_multiple_mmap();
-    // test_munmap();
+    test_munmap();
 }

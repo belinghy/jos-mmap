@@ -59,7 +59,8 @@ mmap_entry *mmap_lookup(int fdnum, size_t length, int permission, off_t offset) 
         if (current_entry->fdnum == fdnum
                 && (current_entry->length = length) // once covered, we can use it
                 && current_entry->permission == permission
-                && current_entry->offset == offset) {
+                && current_entry->offset == offset
+                && current_entry->ref_count > 0) {
             return current_entry;
         }
         current_entry = current_entry->next;
