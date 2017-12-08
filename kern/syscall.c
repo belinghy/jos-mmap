@@ -240,7 +240,7 @@ sys_alloc_continuous_pages(envid_t envid, void *va, int n_page, int perm)
 		int not_free = false;
 		int i;
 		for (i = 0; i < n_page; ++i) {
-			pte_t *page_table_entry = pgdir_walk(env->env_pgdir, (void *)(addr_current + i * PGSIZE), 0);
+			pte_t *page_table_entry = pgdir_walk(env->env_pgdir, (void *)(addr_current + i * PGSIZE), 1);
 			if (page_table_entry != NULL && *page_table_entry != 0) {
 				// not free
 				not_free = true;
@@ -256,8 +256,7 @@ sys_alloc_continuous_pages(envid_t envid, void *va, int n_page, int perm)
 		// set occupations
 		cprintf("setting the permissions\n");
 		for (int i = 0; i < n_page; ++i) {
-			pte_t *page_table_entry = pgdir_walk(env->env_pgdir, (void *)(addr_current + i * PGSIZE), 1);
-			*page_table_entry = perm;
+			sys_page_alloc(0, (void *)(addr_current + i * PGSIZE), perm);
 		}
 		va = (void *)addr_current;
 		break;
