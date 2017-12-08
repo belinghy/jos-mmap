@@ -16,9 +16,8 @@ cat(int f, char *s)
         panic("error reading %s: %e", s, n);
 }
 
-void
-umain(int argc, char **argv)
-{
+void 
+test_read_integrity() {
     cprintf("Test: test_mmap\n");
 
     int fdnum = open("lorem", O_RDONLY);
@@ -28,9 +27,6 @@ umain(int argc, char **argv)
     void *address = mmap(NULL, stat.st_size, 0, 0,
                          fdnum, 0);
 
-    // FIXME: Shouldn't need to do this.
-    // Permission is wrong
-    
     seek(fdnum, 0);
     cprintf("========OUTPUT from cat\n");
     cat(fdnum, "<stdin>");
@@ -41,4 +37,25 @@ umain(int argc, char **argv)
         cprintf("%c", mmap_context[i]);
     }
     close(fdnum);
+}
+
+void 
+test_multiple_mmap() {
+    for (int i = 0; i < 10; ++i)
+    {
+        int fdnum = open("lorem", O_RDONLY);
+        struct Stat stat;
+        fstat(fdnum, &stat);
+        void *address = mmap(NULL, stat.st_size, 0, 0,
+                             fdnum, 0);
+        cprintf("mmap address of %d try = %p\n", i + 1, address);
+        close(fdnum);
+    }
+}
+
+void
+umain(int argc, char **argv)
+{
+    // test_read_integrity();
+    test_multiple_mmap();
 }

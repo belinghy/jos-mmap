@@ -219,7 +219,7 @@ sys_page_alloc(envid_t envid, void *va, int perm)
 
 
 static int
-sys_reserve_continuous_pages(envid_t envid, void *va, int n_page, int perm)
+sys_alloc_continuous_pages(envid_t envid, void *va, int n_page, int perm)
 {
 	if (va == NULL) {
 		va = (void *) UTEXT; // start from the beginning
@@ -256,8 +256,7 @@ sys_reserve_continuous_pages(envid_t envid, void *va, int n_page, int perm)
 		// set occupations
 		cprintf("setting the permissions\n");
 		for (int i = 0; i < n_page; ++i) {
-			pte_t *page_table_entry = pgdir_walk(env->env_pgdir, (void *)(addr_current + i * PGSIZE), 1);
-			*page_table_entry = perm;
+			sys_page_alloc(0, (void *)(addr_current + i * PGSIZE), perm);
 		}
 		va = (void *)addr_current;
 		break;
@@ -498,7 +497,7 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 	case SYS_ipc_recv:
 		return sys_ipc_recv((void *)a1);
 	case SYS_sys_reserve_continuous_pages:
-		return sys_reserve_continuous_pages(a1, (void *)a2, a3, a4);
+		return sys_alloc_continuous_pages(a1, (void *)a2, a3, a4);
 	default:
 		return -E_INVAL;
 	}

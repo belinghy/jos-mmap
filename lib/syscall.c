@@ -118,7 +118,7 @@ sys_ipc_recv(void *dstva)
 }
 
 int
-sys_reserve_continuous_pages(envid_t envid, void *va, int n_page, int perm)
+sys_alloc_continuous_pages(envid_t envid, void *va, int n_page, int perm)
 {
 	return syscall(SYS_sys_reserve_continuous_pages, 0, envid, (uint32_t)va, n_page, perm, 0);
 }
