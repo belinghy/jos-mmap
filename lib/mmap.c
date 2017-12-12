@@ -121,7 +121,7 @@ mmap(void *addr, size_t length, int permission, int flags,
         return NULL; // something wrong!!!
 
     int any_integer = 9;
-    addr = (void *)sys_alloc_continuous_pages(0, addr, length, permission);
+    addr = (void *)sys_alloc_continuous_pages(0, addr, length, PTE_U | PTE_W | PTE_P);
     if (addr == 0) {
         panic("mmap: failed to find continous pages"); // error
     }
