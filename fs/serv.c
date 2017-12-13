@@ -257,7 +257,7 @@ serve_mmap(envid_t envid, union Fsipc *ipc,
 		panic("sys_page_alloc: %e", r);
 
 	int any_integer = 9;
-	r = sys_alloc_continuous_pages(0, buffer, ROUNDUP(length, PGSIZE), any_integer, NULL);
+	r = sys_alloc_continuous_pages(0, buffer, ROUNDUP(length, PGSIZE), any_integer);
 	if (r == 0) {
 		ret->ret_addr = NULL;
 		return -1; // error

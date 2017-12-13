@@ -6,7 +6,7 @@ static mmap_entry_bucket *mmap_entry_bucket_root = NULL;
 void pgfault_upcall(struct UTrapframe *tf);
 
 mmap_entry_bucket *mmap_entry_bucket_alloc() {
-    mmap_entry_bucket *bucket = (mmap_entry_bucket *)sys_alloc_continuous_pages(0, (void *)0xC0000000, 1, PTE_U | PTE_W | PTE_P, pgfault_upcall);
+    mmap_entry_bucket *bucket = (mmap_entry_bucket *)sys_alloc_continuous_pages(0, (void *)0xC0000000, 1, PTE_U | PTE_W | PTE_P);
     if (bucket == 0) {
         panic("no memory left for mmap");
     }
@@ -69,7 +69,6 @@ mmap_entry *mmap_lookup_by_addr(void *addr, size_t length) {
 
 mmap_entry *mmap_lookup_by_addr_only(void *addr) {
     mmap_entry *current_entry = mmap_entry_root;
-    cprintf("mmap_entry_root=%p\n", mmap_entry_root);
 
     while (current_entry != NULL) {
         if (current_entry->addr <= addr
@@ -120,8 +119,7 @@ mmap(void *addr, size_t length, int permission, int flags,
         return NULL; // something wrong!!!
 
     int any_integer = 9;
-    cprintf("pgfault_upcall's address = %p\n", pgfault_upcall);
-    addr = (void *)sys_alloc_continuous_pages(0, addr, (length + PGSIZE - 1) / PGSIZE, PTE_U | PTE_W, pgfault_upcall);
+    addr = (void *)sys_alloc_continuous_pages(0, addr, (length + PGSIZE - 1) / PGSIZE, PTE_U | PTE_W);
     if (addr == 0) {
         panic("mmap: failed to find continous pages"); // error
     }
@@ -169,7 +167,6 @@ munmap(void *addr, size_t length) {
 
 void pgfault_upcall(struct UTrapframe *tf) {
     uint32_t fault_va = tf->utf_fault_va;
-    cprintf("va=%p\n", fault_va);
 
     mmap_entry *entry;
     if ((entry = mmap_lookup_by_addr_only((void *)fault_va))) {

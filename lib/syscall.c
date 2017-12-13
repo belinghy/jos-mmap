@@ -118,10 +118,8 @@ sys_ipc_recv(void *dstva)
 }
 
 int
-sys_alloc_continuous_pages(envid_t envid, void *va, int n_page, int perm, void *pgfault_upcall)
+sys_alloc_continuous_pages(envid_t envid, void *va, int n_page, int perm)
 {
-	int r = syscall(SYS_sys_reserve_continuous_pages, 0, envid, (uint32_t)va, n_page, perm, (uint32_t)pgfault_upcall);
-    cprintf("lib/syscall.c:124\n");
-    return r;
+	return syscall(SYS_sys_reserve_continuous_pages, 0, envid, (uint32_t)va, n_page, perm, 0);
 }
 

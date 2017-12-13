@@ -219,9 +219,8 @@ sys_page_alloc(envid_t envid, void *va, int perm)
 
 
 static int
-sys_alloc_continuous_pages(envid_t envid, void *va, int n_page, int perm, void *pgfault_upcall)
+sys_alloc_continuous_pages(envid_t envid, void *va, int n_page, int perm)
 {
-	cprintf("%d, %d\n", curenv->env_id, envid);
 	if (va == NULL) {
 		va = (void *) UTEXT; // start from the beginning
 		// FIXME: Can we start from page_free_list instead?
@@ -246,8 +245,6 @@ sys_alloc_continuous_pages(envid_t envid, void *va, int n_page, int perm, void *
 				// not free
 				not_free = true;
 				break;
-			} else {
-				cprintf("%p is free\n", addr_current + i * PGSIZE);
 			}
 		}
 
@@ -257,18 +254,14 @@ sys_alloc_continuous_pages(envid_t envid, void *va, int n_page, int perm, void *
 		}
 
 		// set occupations
-		cprintf("setting the permissions\n");
 		for (int i = 0; i < n_page; ++i) {
 			if (perm & PTE_P) {
 				// actually allocate
 				sys_page_alloc(0, (void *)(addr_current + i * PGSIZE), perm);
 			} else {
 				// reserve the page but not allocate. Avoid P permission!!!
-				cprintf("occupying %p\n", addr_current + i * PGSIZE);
 				pte_t *page_table_entry = pgdir_walk(env->env_pgdir, (void *)(addr_current + i * PGSIZE), 1);
 				*page_table_entry = perm;
-				cprintf("%p is occupied\n", addr_current + i * PGSIZE);
-				cprintf("curenv(%x)->env_pgfault_upcall = %p\n", curenv->env_id, curenv->env_pgfault_upcall);
 			}
 		}
 		va = (void *)addr_current;
@@ -510,7 +503,7 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 	case SYS_ipc_recv:
 		return sys_ipc_recv((void *)a1);
 	case SYS_sys_reserve_continuous_pages:
-		return sys_alloc_continuous_pages(a1, (void *)a2, a3, a4, (void *)a5);
+		return sys_alloc_continuous_pages(a1, (void *)a2, a3, a4);
 	default:
 		return -E_INVAL;
 	}
