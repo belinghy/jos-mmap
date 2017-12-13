@@ -101,7 +101,7 @@ mmap(void *addr, size_t length, int permission, int flags,
            int fdnum, off_t offset) {
     mmap_entry *entry = NULL;
     if (flags != MAP_PRIVATE) {
-        mmap_lookup(fdnum, length, permission, offset, flags);
+        entry = mmap_lookup(fdnum, length, permission, offset, flags);
     }
     if (entry != NULL) {
         entry->ref_count++;

@@ -107,9 +107,30 @@ test_munmap() {
 }
 
 void
+test_mmap_shared_private() {
+    int fdnum = open("lorem", O_RDONLY);
+    struct Stat stat;
+    fstat(fdnum, &stat);
+    
+    void *address1 = mmap(NULL, stat.st_size, PROT_READ, MAP_SHARED,
+                         fdnum, 0);
+    void *address2 = mmap(NULL, stat.st_size, PROT_READ, MAP_SHARED,
+                         fdnum, 0);
+    void *address3 = mmap(NULL, stat.st_size, PROT_READ, MAP_PRIVATE,
+                         fdnum, 0);
+
+    // first two should be the same
+    cprintf("%p %p %p\r\n", address1, address2, address3);
+    munmap(address1, stat.st_size);
+    munmap(address2, stat.st_size);
+    munmap(address3, stat.st_size);
+    close(fdnum);
+}
+
+void
 umain(int argc, char **argv)
 {
-    test_read_integrity();
+    // test_read_integrity();
     // cprintf("[!!!] 1000\r\n"); test_multiple_cat(1000);    test_multiple_cat(1000);    test_multiple_cat(1000);
     // cprintf("[!!!] 10000\r\n"); test_multiple_cat(10000);    test_multiple_cat(10000);    test_multiple_cat(10000);
     // cprintf("[!!!] 30000\r\n"); test_multiple_cat(30000);    test_multiple_cat(30000);    test_multiple_cat(30000);
@@ -121,4 +142,5 @@ umain(int argc, char **argv)
     // cprintf("[!!!] 60000\r\n"); test_multiple_mmap(60000);    test_multiple_mmap(60000);    test_multiple_mmap(60000);
     // cprintf("[!!!] 100000\r\n"); test_multiple_mmap(100000);    test_multiple_mmap(100000);    test_multiple_mmap(100000);
     test_munmap();
+    test_mmap_shared_private();
 }
