@@ -135,12 +135,14 @@ umain(int argc, char **argv)
     // cprintf("[!!!] 30000\r\n"); test_multiple_cat(30000);    test_multiple_cat(30000);    test_multiple_cat(30000);
     // cprintf("[!!!] 60000\r\n"); test_multiple_cat(60000);    test_multiple_cat(60000);    test_multiple_cat(60000);
     // cprintf("[!!!] 100000\r\n"); test_multiple_cat(100000);    test_multiple_cat(100000);    test_multiple_cat(100000);
+    
     // cprintf("[!!!] 1000\r\n"); test_multiple_mmap(1000);    test_multiple_mmap(1000);    test_multiple_mmap(1000);
     // cprintf("[!!!] 10000\r\n"); test_multiple_mmap(10000);    test_multiple_mmap(10000);    test_multiple_mmap(10000);
     // cprintf("[!!!] 30000\r\n"); test_multiple_mmap(30000);    test_multiple_mmap(30000);    test_multiple_mmap(30000);
     // cprintf("[!!!] 60000\r\n"); test_multiple_mmap(60000);    test_multiple_mmap(60000);    test_multiple_mmap(60000);
     // cprintf("[!!!] 100000\r\n"); test_multiple_mmap(100000);    test_multiple_mmap(100000);    test_multiple_mmap(100000);
-    test_munmap();
-    test_mmap_shared_private();
-    test_read_integrity();
+    
+    // test_munmap();
+    // test_mmap_shared_private();
+    // test_read_integrity();
 }

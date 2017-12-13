@@ -58,7 +58,8 @@ mmap_entry *mmap_lookup_by_addr(void *addr, size_t length) {
 
     while (current_entry != NULL) {
         if (current_entry->addr == addr
-                && current_entry->length == length) {
+                && current_entry->length == length
+                && current_entry->ref_count > 0) {
             return current_entry;
         }
         current_entry = current_entry->next;
@@ -72,7 +73,8 @@ mmap_entry *mmap_lookup_by_addr_only(void *addr) {
 
     while (current_entry != NULL) {
         if (current_entry->addr <= addr
-                && current_entry->addr + current_entry->length >= addr) {
+                && current_entry->addr + current_entry->length >= addr
+                && current_entry->ref_count > 0) {
             return current_entry;
         }
         current_entry = current_entry->next;
@@ -161,6 +163,17 @@ munmap(void *addr, size_t length) {
         if (reopened) {
             close(fdnum);
         }
+    }
+    if (entry->ref_count == 0) {
+        if (mmap_entry_root == entry) {
+            mmap_entry_root = entry->next;
+            return 0;
+        }
+        mmap_entry *current_entry = mmap_entry_root;
+        while (current_entry->next != entry) {
+            current_entry->next = current_entry->next;
+        }
+        current_entry->next = entry->next;
     }
     return 0;
 }

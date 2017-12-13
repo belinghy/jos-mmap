@@ -20,7 +20,8 @@ while True:
         print(start_time, end_time, end_time - start_time)
         results.append(end_time - start_time)
         if len(results) % 3 == 0:
-            print(', '.join([str(f) for f in results[-3:]]))
+            for i in range(len(results) // 3):
+                print(', '.join([str(f) for f in results[i * 3:i * 3 + 3]]) + '\r\n')
 
     #the real code does filtering here
     # print("test: ")#, line.decode("utf-8").strip())
