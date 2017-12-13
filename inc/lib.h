@@ -88,6 +88,9 @@ int	close(int fd);
 #define PROT_WRITE  2
 #define PROT_EXEC   3
 
+#define MAP_PRIVATE 0x0000      /* Update not shared, i.e. read only */
+#define MAP_SHARED  0x0001      /* Update is shared */
+
 void *mmap(void *addr, size_t length, int prot, int flags,
            int fd, off_t offset);
 int munmap(void *addr, size_t length);
@@ -137,9 +140,5 @@ void	wait(envid_t env);
 #define	O_TRUNC		0x0200		/* truncate to zero length */
 #define	O_EXCL		0x0400		/* error if already exists */
 #define O_MKDIR		0x0800		/* create directory, not regular file */
-
-/* mmap flags */
-#define MAP_PRIVATE	0x0000		/* Update not shared, i.e. read only */
-#define MAP_SHARED	0x0001		/* Update is shared */
 
 #endif	// !JOS_INC_LIB_H

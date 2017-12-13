@@ -24,7 +24,7 @@ test_read_integrity() {
     struct Stat stat;
     fstat(fdnum, &stat);
     cprintf("file size = %lld\n", stat.st_size);
-    void *address = mmap(NULL, stat.st_size, PROT_READ, 0,
+    void *address = mmap(NULL, stat.st_size, PROT_READ, MAP_PRIVATE,
                          fdnum, 0);
 
     seek(fdnum, 0);
@@ -51,7 +51,7 @@ test_multiple_mmap(int n) {
     {
         // int fdnum = open("lorem", O_RDONLY);
 
-        void *address = mmap(NULL, stat.st_size, PROT_READ, 0,
+        void *address = mmap(NULL, stat.st_size, PROT_READ, MAP_SHARED,
                              fdnum, 0);
         // cprintf("mmap address of %d try = %p\n", i + 1, address);
         // cprintf("%s", (char *)address);
@@ -93,7 +93,7 @@ test_munmap() {
     cat(fdnum, "<stdin>");
     
     seek(fdnum, 0);
-    void *address = mmap(NULL, stat.st_size, PROT_WRITE, 0,
+    void *address = mmap(NULL, stat.st_size, PROT_WRITE, MAP_SHARED,
                          fdnum, 0);
     cprintf("%s", (char *)address);
 

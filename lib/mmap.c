@@ -7,6 +7,7 @@ typedef struct mmap_entry
     void *addr;
     size_t length;
     int permission;
+    int flags;
     off_t offset;
     struct mmap_entry *next;
     int ref_count;
@@ -52,7 +53,7 @@ mmap_entry *find_empty_mmap_entry() {
     return NULL;
 }
 
-mmap_entry *mmap_lookup(int fdnum, size_t length, int permission, off_t offset) {
+mmap_entry *mmap_lookup(int fdnum, size_t length, int permission, off_t offset, int flags) {
     mmap_entry *current_entry = mmap_entry_root;
 
     while (current_entry != NULL) {
@@ -60,6 +61,7 @@ mmap_entry *mmap_lookup(int fdnum, size_t length, int permission, off_t offset) 
                 && (current_entry->length = length) // once covered, we can use it
                 && current_entry->permission == permission
                 && current_entry->offset == offset
+                && current_entry->flags == flags
                 && current_entry->ref_count > 0) {
             return current_entry;
         }
@@ -97,7 +99,10 @@ mmap_entry *mmap_entry_alloc() {
 void *
 mmap(void *addr, size_t length, int permission, int flags,
            int fdnum, off_t offset) {
-    mmap_entry *entry = mmap_lookup(fdnum, length, permission, offset);
+    mmap_entry *entry = NULL;
+    if (flags != MAP_PRIVATE) {
+        mmap_lookup(fdnum, length, permission, offset, flags);
+    }
     if (entry != NULL) {
         entry->ref_count++;
         return entry->addr + offset - entry->offset;
@@ -131,6 +136,7 @@ mmap(void *addr, size_t length, int permission, int flags,
     entry->permission = permission;
     entry->offset = offset;
     entry->addr = addr;
+    entry->flags = flags;
     fstat(fdnum, &entry->file_stat);
 
     return addr;
