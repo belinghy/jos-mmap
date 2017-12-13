@@ -660,6 +660,8 @@ user_mem_check(struct Env *env, const void *va, size_t len, int perm)
 	for (; va < max_va; va = ROUNDDOWN(va + PGSIZE, PGSIZE)) {
 		pte_t *pte = pgdir_walk(env->env_pgdir, va, false);
 		if (pte == NULL || va > (void *)ULIM || (int)(*pte & perm) != perm) {
+			cprintf("env(%x), pte=%p, va=%p, ULIM=%p, perm=%d, *pte=%d\n", env->env_id, 
+				pte, va, ULIM, perm, *pte);
 			user_mem_check_addr = (uintptr_t)va;
 			return -E_FAULT;
 		}

@@ -57,7 +57,7 @@ int	sys_page_map(envid_t src_env, void *src_pg,
 int	sys_page_unmap(envid_t env, void *pg);
 int	sys_ipc_try_send(envid_t to_env, uint32_t value, void *pg, int perm);
 int	sys_ipc_recv(void *rcv_pg);
-int sys_alloc_continuous_pages(envid_t envid, void *va, int n_page, int perm);
+int sys_alloc_continuous_pages(envid_t envid, void *va, int n_page, int perm, void *pgfault_upcall);
 
 // This must be inlined.  Exercise for reader: why?
 static inline envid_t __attribute__((always_inline))
@@ -90,6 +90,26 @@ int	close(int fd);
 
 #define MAP_PRIVATE 0x0000      /* Update not shared, i.e. read only */
 #define MAP_SHARED  0x0001      /* Update is shared */
+
+typedef struct mmap_entry
+{
+    struct Stat file_stat;
+    int fdnum;
+    void *addr;
+    size_t length;
+    int permission;
+    int flags;
+    off_t offset;
+    struct mmap_entry *next;
+    int ref_count;
+} mmap_entry;
+
+typedef struct mmap_entry_bucket
+{
+    int n_entries;
+    mmap_entry *mmap_entrys;
+    struct mmap_entry_bucket *next;
+} mmap_entry_bucket;
 
 void *mmap(void *addr, size_t length, int prot, int flags,
            int fd, off_t offset);

@@ -352,6 +352,7 @@ page_fault_handler(struct Trapframe *tf)
 	//   (the 'tf' variable points at 'curenv->env_tf').
 
 	// LAB 4: Your code here.
+	cprintf("curenv(%x)->env_pgfault_upcall = %p\n", curenv->env_id, curenv->env_pgfault_upcall);
 	if (curenv->env_pgfault_upcall) {
 		uintptr_t stacktop = UXSTACKTOP;
 
