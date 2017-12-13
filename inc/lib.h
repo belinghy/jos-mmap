@@ -88,8 +88,8 @@ int	close(int fd);
 #define PROT_WRITE  2
 #define PROT_EXEC   3
 
-#define MAP_PRIVATE 0x0000      /* Update not shared, i.e. read only */
-#define MAP_SHARED  0x0001      /* Update is shared */
+#define MAP_PRIVATE 0      /* Update not shared, i.e. read only */
+#define MAP_SHARED  1      /* Update is shared */
 
 typedef struct mmap_entry
 {
