@@ -24,7 +24,7 @@ test_read_integrity() {
     struct Stat stat;
     fstat(fdnum, &stat);
     cprintf("file size = %lld\n", stat.st_size);
-    void *address = mmap(NULL, stat.st_size, PTE_U | PTE_W | PTE_P, 0,
+    void *address = mmap(NULL, stat.st_size, PROT_READ, 0,
                          fdnum, 0);
 
     seek(fdnum, 0);
@@ -51,7 +51,7 @@ test_multiple_mmap(int n) {
     {
         // int fdnum = open("lorem", O_RDONLY);
 
-        void *address = mmap(NULL, stat.st_size, PTE_U | PTE_P, 0,
+        void *address = mmap(NULL, stat.st_size, PROT_READ, 0,
                              fdnum, 0);
         // cprintf("mmap address of %d try = %p\n", i + 1, address);
         // cprintf("%s", (char *)address);
@@ -93,7 +93,7 @@ test_munmap() {
     cat(fdnum, "<stdin>");
     
     seek(fdnum, 0);
-    void *address = mmap(NULL, stat.st_size, PTE_U | PTE_W | PTE_P, 0,
+    void *address = mmap(NULL, stat.st_size, PROT_WRITE, 0,
                          fdnum, 0);
     cprintf("%s", (char *)address);
 
@@ -109,16 +109,16 @@ test_munmap() {
 void
 umain(int argc, char **argv)
 {
-    // test_read_integrity();
-    cprintf("[!!!] 1000\r\n"); test_multiple_cat(1000);    test_multiple_cat(1000);    test_multiple_cat(1000);
-    cprintf("[!!!] 10000\r\n"); test_multiple_cat(10000);    test_multiple_cat(10000);    test_multiple_cat(10000);
-    cprintf("[!!!] 30000\r\n"); test_multiple_cat(30000);    test_multiple_cat(30000);    test_multiple_cat(30000);
-    cprintf("[!!!] 60000\r\n"); test_multiple_cat(60000);    test_multiple_cat(60000);    test_multiple_cat(60000);
-    cprintf("[!!!] 100000\r\n"); test_multiple_cat(100000);    test_multiple_cat(100000);    test_multiple_cat(100000);
-    cprintf("[!!!] 1000\r\n"); test_multiple_mmap(1000);    test_multiple_mmap(1000);    test_multiple_mmap(1000);
-    cprintf("[!!!] 10000\r\n"); test_multiple_mmap(10000);    test_multiple_mmap(10000);    test_multiple_mmap(10000);
-    cprintf("[!!!] 30000\r\n"); test_multiple_mmap(30000);    test_multiple_mmap(30000);    test_multiple_mmap(30000);
-    cprintf("[!!!] 60000\r\n"); test_multiple_mmap(60000);    test_multiple_mmap(60000);    test_multiple_mmap(60000);
-    cprintf("[!!!] 100000\r\n"); test_multiple_mmap(100000);    test_multiple_mmap(100000);    test_multiple_mmap(100000);
-    // test_munmap();
+    test_read_integrity();
+    // cprintf("[!!!] 1000\r\n"); test_multiple_cat(1000);    test_multiple_cat(1000);    test_multiple_cat(1000);
+    // cprintf("[!!!] 10000\r\n"); test_multiple_cat(10000);    test_multiple_cat(10000);    test_multiple_cat(10000);
+    // cprintf("[!!!] 30000\r\n"); test_multiple_cat(30000);    test_multiple_cat(30000);    test_multiple_cat(30000);
+    // cprintf("[!!!] 60000\r\n"); test_multiple_cat(60000);    test_multiple_cat(60000);    test_multiple_cat(60000);
+    // cprintf("[!!!] 100000\r\n"); test_multiple_cat(100000);    test_multiple_cat(100000);    test_multiple_cat(100000);
+    // cprintf("[!!!] 1000\r\n"); test_multiple_mmap(1000);    test_multiple_mmap(1000);    test_multiple_mmap(1000);
+    // cprintf("[!!!] 10000\r\n"); test_multiple_mmap(10000);    test_multiple_mmap(10000);    test_multiple_mmap(10000);
+    // cprintf("[!!!] 30000\r\n"); test_multiple_mmap(30000);    test_multiple_mmap(30000);    test_multiple_mmap(30000);
+    // cprintf("[!!!] 60000\r\n"); test_multiple_mmap(60000);    test_multiple_mmap(60000);    test_multiple_mmap(60000);
+    // cprintf("[!!!] 100000\r\n"); test_multiple_mmap(100000);    test_multiple_mmap(100000);    test_multiple_mmap(100000);
+    test_munmap();
 }

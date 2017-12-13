@@ -99,10 +99,6 @@ mmap(void *addr, size_t length, int permission, int flags,
            int fdnum, off_t offset) {
     mmap_entry *entry = mmap_lookup(fdnum, length, permission, offset);
     if (entry != NULL) {
-        if (permission & PTE_W) {
-            cprintf("This file is locked.\n");
-            return NULL;
-        }
         entry->ref_count++;
         return entry->addr + offset - entry->offset;
     }
@@ -149,7 +145,7 @@ munmap(void *addr, size_t length) {
     if (entry == NULL) {
         panic("try to ummap an addr that has not been mapped yet.");
     }
-    if (--entry->ref_count == 0 && (entry->permission & PTE_W)) {
+    if (--entry->ref_count == 0 && (entry->permission == PROT_WRITE)) {
         int fdnum = entry->fdnum;
         // check if the file is close or not
         bool reopened = false;
